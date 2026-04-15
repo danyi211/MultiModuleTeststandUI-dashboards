@@ -1,0 +1,32 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: mac-postgres-db
+    orgId: 1
+  - name: grafana-postgresql-datasource-PLC
+    orgId: 2
+
+
+datasources:
+  - name: mac-postgres-db
+    uid: mac_postgres_db
+    type: grafana-postgresql-datasource
+    url: hgcdbIPaddr:5432
+    database: hgcdb
+    user: postgres  # Update if your username is different
+    secureJsonData:
+      password: thePASSword
+    jsonData:
+      sslmode: 'disable'
+    isDefault: true
+  - name: grafana-postgresql-datasource-PLC
+    uid: grafana_postgresql_datasource_PLC
+    type: grafana-postgresql-datasource
+    url: 192.168.0.0:5432
+    database: PLC_COLLECT
+    user: theUSER
+    secureJsonData:
+      password: thePASSWORD
+    jsonData:
+      sslmode: 'disable'
+    isDefault: false
