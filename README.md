@@ -29,25 +29,14 @@ Use **docker compose** for building grafana dashboard.
 │   │   └── datasources.yaml
 │   └── plugins
 └── _stable_dashboards
-    ├── IVcurve
-    │   ├── IV_CurveforMMTS.json
-    │   ├── IV_CurvePlot.json
-    │   └── SingleModuleIVcurve.json
-    ├── stocks
-    │   ├── HGCalAssemblyandTestStatus.json
-    │   ├── NTULab Material Stocks for HD.json
-    │   └── NTULab Material Stocks for LD.json
-    └── thermal_cycle
-        ├── ThermalBoxEnvironmentforMMTS.json
-        ├── ThermalBoxEnvironmentHistory.json
-        └── ThermalBoxEnvironment.json
 ```
 
 
 ### How to use
 Use docker compose to handle the building. Before activate the docker container, you need to modify the following setups.
 
-1. Assign database
+1. **Assign used database**
+
 Modify [provisioning/datasources/datasources.yaml](provisioning/datasources/datasources.yaml). By default you need to assign the database **hgcdb** and **PLC variables** for showing environment variables
 (Once the temperature / humidity recorded into DB, than we can merge them)
 ```
@@ -73,22 +62,26 @@ This data source would be removed later once the PLC variables uploaded into **h
 So currently **thermal box** related dashboards cannot be accessed in dashboard.
 
 
-2. Docker settings in `docker-compose.yml`
+2. **Docker settings in [docker-compose.yml](docker-compose.yml)**
+
 You need to modify the environment variables like **GF_SECURITY_ADMIN_USER** and **GF_SECURITY_ADMIN_PASSWORD** for this dashbaord.
 dashboard modification reuqired the this username and password.
 
 
-3. Use docker build the dashboard
+3. **Use docker build the dashboard**
+
 After that, you can use docker compose to handle the grafana dashboard
 ```
 sudo docker compose up -d ### compile and activate the required docker containers
 sudo docker compose down  ### disable the docker containers
 ```
 
-4. Check the grafana dashboard can be accessed locally
+4. **Check the grafana dashboard can be accessed locally**
+
 Use [local link](http://127.0.0.1:3000/) checks dashboard works or not.
 
-5. Open firewall
+5. **Open firewall**
+
 ```
 sudo sh setup.openfirewall.sh
 ```
