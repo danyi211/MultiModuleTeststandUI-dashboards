@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 22,
+  "id": 12,
   "links": [],
   "panels": [
     {
@@ -88,11 +88,11 @@
               },
               {
                 "id": "max",
-                "value": 0.0001
+                "value": 0.001
               },
               {
                 "id": "min",
-                "value": 1e-9
+                "value": 1e-7
               },
               {
                 "id": "unit",
@@ -136,9 +136,11 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Name",
+          "sortDesc": false
         },
         "mapping": "auto",
         "series": [
@@ -160,7 +162,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "\n        WITH latest_qc_summary AS (\n            SELECT DISTINCT ON (module_name) *\n            FROM module_qc_summary\n            ORDER BY module_name, mod_qc_no DESC\n        ), \n\n        latest_iv_test AS (\n            SELECT DISTINCT ON (mod_ivtest_no) *\n            FROM module_iv_test\n            WHERE meas_v IS NOT NULL AND meas_i IS NOT NULL\n\t\t\tAND (temp_c::float ${temp_range})\n\t\t\tAND (rel_hum::float ${humi_range})\n            AND temp_c ~ '^[-+]?[0-9]+(\\.[0-9]+)?$'\n            AND rel_hum ~ '^[-+]?[0-9]+(\\.[0-9]+)?$'\n            AND array_length(meas_v, 1) = array_length(meas_i, 1)\n\t\t\tAND module_name = '${selected_module_name}'\n            ORDER BY mod_ivtest_no DESC\n        ),\n\n\n        filtered_iv AS (\n        SELECT *,\n            meas_i[array_length(meas_i, 1)] AS i_last\n        FROM module_iv_test\n        WHERE\n            mod_ivtest_no IN (SELECT mod_ivtest_no FROM latest_iv_test)\n        ),\n\n        best_per_module AS (\n        SELECT DISTINCT ON (filtered_iv.mod_ivtest_no) *\n        FROM filtered_iv\n\n        ORDER BY filtered_iv.mod_ivtest_no, i_last DESC\n        ),\n\n        unnested AS (\n        SELECT \n             mod_ivtest_no,\n        module_name,\n        rel_hum,\n        temp_c,\n        date_test,\n        status_desc,\n            ABS(v) as v,\n            i\n        FROM best_per_module,\n        UNNEST(meas_v, meas_i) AS t(v, i)\n        )\n\n        SELECT \n            concat_ws(' | ',\n        module_name,\n        'RH=' || rel_hum,\n        'T=' || temp_c,\n        status_desc,\n        to_char(date_test, 'YYYY-MM-DD')\n    ) AS legend_label,\n    v,\n    i\n        FROM unnested\n        ORDER BY mod_ivtest_no ASC;\n        ",
+          "rawSql": "WITH latest_qc_summary AS (\n  SELECT\n    DISTINCT ON (module_name) *\n  FROM\n    module_qc_summary\n  ORDER BY\n    module_name,\n    mod_qc_no DESC\n),\nlatest_iv_test AS (\n  SELECT\n    DISTINCT ON (mod_ivtest_no) *\n  FROM\n    module_iv_test\n  WHERE\n    meas_v IS NOT NULL\n    AND meas_i IS NOT NULL\n    AND (temp_c :: float ${temp_range})\n    AND (rel_hum :: float ${humi_range})\n    AND temp_c ~ '^[-+]?[0-9]+(\\.[0-9]+)?$'\n    AND rel_hum ~ '^[-+]?[0-9]+(\\.[0-9]+)?$'\n    AND array_length(meas_v, 1) = array_length(meas_i, 1)\n    AND module_name = '${selected_module_name}'\n  ORDER BY\n    mod_ivtest_no DESC\n),\nfiltered_iv AS (\n  SELECT\n    *,\n    meas_i [array_length(meas_i, 1)] AS i_last\n  FROM\n    module_iv_test\n  WHERE\n    mod_ivtest_no IN (\n      SELECT\n        mod_ivtest_no\n      FROM\n        latest_iv_test\n    )\n),\nbest_per_module AS (\n  SELECT\n    DISTINCT ON (filtered_iv.mod_ivtest_no) *,\n    ROW_NUMBER() OVER (\n      PARTITION BY module_name\n      ORDER BY\n        mod_ivtest_no DESC\n    ) AS rn\n  FROM\n    filtered_iv\n  ORDER BY\n    filtered_iv.mod_ivtest_no,\n    i_last DESC\n),\nunnested AS (\n  SELECT\n    mod_ivtest_no,\n    module_name,\n    rel_hum,\n    temp_c,\n    date_test,\n    time_test,\n    status_desc,\n    rn,\n    ABS(v) as v,\n    i\n  FROM\n    best_per_module,\n    UNNEST(meas_v, meas_i) AS t(v, i)\n)\nSELECT\n  concat_ws(\n    ' | ',\n    rn || '.' || date_test + time_test,\n    'RH=' || rel_hum,\n    'T=' || temp_c,\n    '#' || mod_ivtest_no,\n    status_desc\n  ) AS legend_label,\n  v,\n  i\nFROM\n  unnested\nORDER BY\n  mod_ivtest_no,\n  v DESC;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -287,5 +289,5 @@
   "timezone": "browser",
   "title": "Single module IV curve",
   "uid": "iv_curve-plot-search-module",
-  "version": 14
+  "version": 2
 }
